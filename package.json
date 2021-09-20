@@ -1,7 +1,7 @@
 {
-  "name": "@reactioncommerce/reaction-variant-ownerInfo",
+  "name": "@husamaz1994/reaction-variant-ownerinfo",
   "description": "Boilerplate Example plugin for the Reaction API",
-  "version": "0.0.0-development",
+  "version": "0.0.0-beta",
   "main": "index.js",
   "type": "module",
   "engines": {
