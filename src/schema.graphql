@@ -1,0 +1,32 @@
+extend type ProductVariant {
+  uploadedBy: uploadedBy
+  isPublished:Boolean
+}
+
+extend input ProductVariantInput {
+  uploadedBy: uploadedByinput
+  isPublished:Boolean=false
+}
+
+extend type CatalogProductVariant {
+  uploadedBy: uploadedBy
+  isPublished:Boolean
+
+}
+
+
+type uploadedBy {
+  name:String
+  image:String
+  userId:ID
+ }
+
+input uploadedByinput {
+  name:String
+  image:String
+  userId:ID
+}
+
+extend type Account {
+productVariants:[ProductVariant]
+}
