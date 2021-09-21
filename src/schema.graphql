@@ -1,16 +1,13 @@
 extend type ProductVariant {
   uploadedBy: uploadedBy
-  isPublished:Boolean
 }
 
 extend input ProductVariantInput {
   uploadedBy: uploadedByinput
-  isPublished:Boolean=false
 }
 
 extend type CatalogProductVariant {
   uploadedBy: uploadedBy
-  isPublished:Boolean
 
 }
 

@@ -34,13 +34,11 @@ function myStartup(context) {
   });
 
   context.simpleSchemas.ProductVariant.extend({
-    uploadedBy: OwnerInfo,
-    isPublished:Boolean
+    uploadedBy: OwnerInfo
   });
 
   context.simpleSchemas.CatalogProductVariant.extend({
-    uploadedBy: OwnerInfo,
-    isPublished:Boolean
+    uploadedBy: OwnerInfo
 
   });
 }
@@ -58,7 +56,6 @@ function myPublishProductToCatalog(
         (variant) => variant._id === catalogVariant.variantId
       );
       catalogVariant.uploadedBy = productVariant.uploadedBy || null;
-      catalogVariant.isPublished = productVariant.isPublished || null;
     });
 }
 
