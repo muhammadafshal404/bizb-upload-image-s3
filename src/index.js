@@ -2,7 +2,6 @@ import pkg from "../package.json";
 import SimpleSchema from "simpl-schema";
 import importAsString from "@reactioncommerce/api-utils/importAsString.js";
 const mySchema = importAsString("./schema.graphql");
-// import getMedia from "./utils/getMedia.js";
 
 var _context = null;
 
@@ -14,6 +13,23 @@ const resolvers = {
     },
   },
 };
+async function getProductMedia(
+  context,
+  productId
+ 
+) {
+  const { collections } = context;
+  const { Products } = collections;
+
+  const selector = {
+    "_id":productId
+  };
+console.log(selector)
+
+  return Products.findOne(selector);
+}
+
+
 function myStartup1(context) {
   _context = context;
   const { app, collections, rootUrl } = context;
@@ -81,22 +97,50 @@ function myStartup1(context) {
     "media.$": {
       type: ImageInfo,
     },
+    mediaS3: {
+      type: Array,
+      label: "Media",
+      optional: true,
+    },
+    "mediaS3.$": {
+      type: ImageInfo,
+    },
+  });
+  context.simpleSchemas.ProductVariant.extend({
+    media: {
+      type: Array,
+      label: "Media",
+      optional: true,
+    },
+    "media.$": {
+      type: ImageInfo,
+    },
+    mediaS3: {
+      type: Array,
+      label: "Media",
+      optional: true,
+    },
+    "mediaS3.$": {
+      type: ImageInfo,
+    },
   });
 }
 
 // The new myPublishProductToCatalog function parses our products,
 // gets the new uploadedBy attribute, and adds it to the corresponding catalog variant in preparation for publishing it to the catalog
-function myPublishProductToCatalog(
-  catalogProduct,
-  { context, product, shop, variants }
-) {
-  // catalogProduct.variants &&
-  //   catalogProduct.variants.map((catalogVariant) => {
-  //     const productVariant = variants.find(
-  //       (variant) => variant._id === catalogVariant.variantId
-  //     );
-  //     catalogVariant.uploadedBy = productVariant.uploadedBy || null;
-  //   });
+async function S3PublishMedia(catalogProduct,{ context, product, shop, variants }) {
+  const { app, collections, rootUrl } = context;
+const {Product}=collections;
+// let productObj=await getProductMedia(context,catalogProduct.productId);
+catalogProduct.media=product.media;
+catalogProduct.primaryImage=product.media[0];
+  catalogProduct.variants &&
+    catalogProduct.variants.map(async (catalogVariant) => {
+      const productVariant = variants.find(
+        (variant) => variant._id === catalogVariant.variantId
+      );
+      catalogVariant.media=productVariant.media;
+    });
 }
 
 /**
@@ -111,7 +155,7 @@ export default async function register(app) {
     version: pkg.version,
     functionsByType: {
       startup: [myStartup1],
-      publishProductToCatalog: [myPublishProductToCatalog],
+      publishProductToCatalog: [S3PublishMedia],
     },
     graphQL: {
       schemas: [mySchema],
