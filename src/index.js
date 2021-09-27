@@ -1,6 +1,12 @@
 import pkg from "../package.json";
 import SimpleSchema from "simpl-schema";
 import importAsString from "@reactioncommerce/api-utils/importAsString.js";
+import fileUpload from "express-fileupload";
+import cors from "cors";
+import bodyParser from "body-parser";
+import morgan from "morgan";
+import _ from "lodash";
+import S3Upload from "./utils/s3Upload.js";
 const mySchema = importAsString("./schema.graphql");
 
 var _context = null;
@@ -8,36 +14,94 @@ var _context = null;
 const resolvers = {
   Product: {
     async media(parent, args, context, info) {
-
       return parent.media;
     },
   },
 };
-async function getProductMedia(
-  context,
-  productId
- 
-) {
-  const { collections } = context;
-  const { Products } = collections;
-
-  const selector = {
-    "_id":productId
-  };
-console.log(selector)
-
-  return Products.findOne(selector);
-}
-
 
 function myStartup1(context) {
   _context = context;
   const { app, collections, rootUrl } = context;
+
   if (app.expressApp) {
-    app.expressApp.post("/uploadByURL", function (req, res, next) {
-      console.log("body",req.body)
-      // write your callback code here.
-      res.send("asdasdasds")
+    // enable files upload
+    app.expressApp.use(
+      fileUpload({
+        createParentPath: true,
+      })
+    );
+
+    //add other middleware
+    app.expressApp.use(cors());
+    app.expressApp.use(bodyParser.json());
+    app.expressApp.use(bodyParser.urlencoded({ extended: true }));
+    app.expressApp.use(morgan("dev"));
+    app.expressApp.post("/upload", async (req, res) => {
+      let uploads = [];
+      try {
+        if (!req.files) {
+          res.send({
+            status: false,
+            message: "No file uploaded",
+          });
+        } else {
+          let data = [];
+
+          //loop all files
+          _.forEach(_.keysIn(req.files.photos), (key) => {
+            let photo = req.files.photos[key];
+            let promise = S3Upload(
+              req.files.photos[key].data,
+              "userProducts/" + req.files.photos[key].name,key
+            ).then((uploadResponse) => {
+              console.log("upload resposne", uploadResponse);
+            if(uploadResponse["key"]){
+              data[uploadResponse["key"]].url=uploadResponse.url
+            }  
+            });
+            uploads.push(promise);
+
+            //move photo to uploads directory
+            // photo.mv("./upload/" + photo.name, function (err) {
+            //   let promise = new Promise(function (resolve, reject) {
+            //     if (err) {
+            //       reject(err);
+            //     } else {
+            //       resolve();
+            //     }
+            //   });
+            //   uploads.push(promise);
+            // });
+
+            //push file details
+            data.push({
+              name: photo.name,
+              mimetype: photo.mimetype,
+              size: photo.size,
+            });
+          });
+          Promise.all(uploads)
+            .then(async function () {
+              console.log(data);
+              // console.log("process.cwd();",process.cwd())
+              // let UploadStatus=await S3Upload(process.cwd()+"/upload/" + data[0].name,"TESTPLUGIN/"+data[0].name)
+              // console.log("UploadStatus",UploadStatus)
+              res.send({
+                status: true,
+                message: "Files are uploaded",
+                data: data,
+              });
+            })
+            .catch(function (err) {
+              console.log(err);
+              res.send(err);
+            });
+          //return response
+        }
+      } catch (err) {
+        console.lofg("err", err);
+        res.status(500).send(err);
+      }
     });
   }
 
@@ -128,18 +192,26 @@ function myStartup1(context) {
 
 // The new myPublishProductToCatalog function parses our products,
 // gets the new uploadedBy attribute, and adds it to the corresponding catalog variant in preparation for publishing it to the catalog
-async function S3PublishMedia(catalogProduct,{ context, product, shop, variants }) {
+async function S3PublishMedia(
+  catalogProduct,
+  { context, product, shop, variants }
+) {
   const { app, collections, rootUrl } = context;
-const {Product}=collections;
-// let productObj=await getProductMedia(context,catalogProduct.productId);
-catalogProduct.media=product.media;
-catalogProduct.primaryImage=product.media[0];
+  const { Product } = collections;
+  // let productObj=await getProductMedia(context,catalogProduct.productId);
+  catalogProduct.media = product.media;
+  catalogProduct.primaryImage = product.media[0];
   catalogProduct.variants &&
     catalogProduct.variants.map(async (catalogVariant) => {
       const productVariant = variants.find(
         (variant) => variant._id === catalogVariant.variantId
       );
-      catalogVariant.media=productVariant.media;
+      catalogVariant.uploadedBy = productVariant.uploadedBy || null;
+      catalogVariant.ancestorId = productVariant["ancestors"][0]
+        ? productVariant["ancestors"][0]
+        : null;
+
+      catalogVariant.media = productVariant.media;
     });
 }
 
@@ -159,7 +231,7 @@ export default async function register(app) {
     },
     graphQL: {
       schemas: [mySchema],
-      resolvers
+      resolvers,
     },
   });
 }
