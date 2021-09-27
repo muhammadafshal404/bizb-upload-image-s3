@@ -3,9 +3,9 @@ import AWS from "aws-sdk";
 import sharp from "sharp";
 
 // Enter copied or downloaded access ID and secret key here
-const ID = "AKIAYBNCQUO2KVYX4VHF";
-const SECRET = "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";
-const REGION = "us-east-2";
+const ID = "";
+const SECRET = "";
+const REGION = "";
 
 // The name of the bucket that you have created
 const BUCKET_NAME = "landofsneakers";
