@@ -3,19 +3,19 @@ import AWS from "aws-sdk";
 import sharp from "sharp";
 
 // Enter copied or downloaded access ID and secret key here
-const ID = "AKIAYBNCQUO2KVYX4VHF";
-const SECRET = "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";
-const REGION = "us-east-2";
+// const ID = "AKIAYBNCQUO2KVYX4VHF";
+// const SECRET = "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";
+// const REGION = "us-east-2";
 
 // The name of the bucket that you have created
 const BUCKET_NAME = "landofsneakers";
 const s3 = new AWS.S3({
-  accessKeyId: ID,
-  secretAccessKey: SECRET,
-  region: REGION,
+  accessKeyId:process.env.ID,
+  secretAccessKey:process.env.SECRET,
+  region:process.env.REGION,
 });
 
-export default function S3Upload(fileContent, uploadName,key) {
+export default function S3Upload(fileContent, uploadName, key) {
   return new Promise(function (resolve, reject) {
     // console.log("fileName,uploadName", fileName, uploadName);
     // const fileContent = fs.readFileSync(fileName);
@@ -40,18 +40,23 @@ export default function S3Upload(fileContent, uploadName,key) {
       Body: fileContent,
     };
 
-    // Uploading files to the bucket
-    s3.upload(params, function (err, data) {
-      if (err) {
-        console.log("oh la la ");
-        reject(err);
-      }
-      resolve({
-        status: true,
-        msg: `File uploaded successfully. ${data.Location}`,
-        key,
-        url:data.Location
+    try {
+      // Uploading files to the bucket
+      s3.upload(params, function (err, data) {
+        if (err) {
+          console.log("oh la la ");
+          reject(err);
+        }
+        resolve({
+          status: true,
+          msg: `File uploaded successfully. ${data.Location}`,
+          key,
+          url: data.Location,
+        });
       });
-    });
+    } catch (err) {
+      console.log("S3 Upload Handler");
+      console.log(err);
+    }
   });
 }

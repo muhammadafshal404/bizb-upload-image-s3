@@ -37,6 +37,11 @@ function myStartup1(context) {
     app.expressApp.use(bodyParser.urlencoded({ extended: true }));
     app.expressApp.use(morgan("dev"));
     app.expressApp.post("/upload", async (req, res) => {
+console.log(process.env);
+console.log("req.body",req.body)
+      let isMulti=req.body.isMulti;
+      let uploadPath=req.body.uploadPath;
+
       let uploads = [];
       try {
         if (!req.files) {
@@ -44,7 +49,7 @@ function myStartup1(context) {
             status: false,
             message: "No file uploaded",
           });
-        } else {
+        } else if(isMulti=='true') {
           let data = [];
 
           //loop all files
@@ -60,19 +65,6 @@ function myStartup1(context) {
             }  
             });
             uploads.push(promise);
-
-            //move photo to uploads directory
-            // photo.mv("./upload/" + photo.name, function (err) {
-            //   let promise = new Promise(function (resolve, reject) {
-            //     if (err) {
-            //       reject(err);
-            //     } else {
-            //       resolve();
-            //     }
-            //   });
-            //   uploads.push(promise);
-            // });
-
             //push file details
             data.push({
               name: photo.name,
@@ -83,9 +75,6 @@ function myStartup1(context) {
           Promise.all(uploads)
             .then(async function () {
               console.log(data);
-              // console.log("process.cwd();",process.cwd())
-              // let UploadStatus=await S3Upload(process.cwd()+"/upload/" + data[0].name,"TESTPLUGIN/"+data[0].name)
-              // console.log("UploadStatus",UploadStatus)
               res.send({
                 status: true,
                 message: "Files are uploaded",
@@ -97,6 +86,31 @@ function myStartup1(context) {
               res.send(err);
             });
           //return response
+        }else if(isMulti=='false'){
+          let data = [];
+
+             //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
+             let photo = req.files.photos;
+             data.push({
+              name: photo.name,
+              mimetype: photo.mimetype,
+              size: photo.size,
+            });
+          S3Upload(
+              req.files.photos.data,
+              uploadPath + req.files.photos.name,0
+            ).then((uploadResponse) => {
+            
+              data[0].url=uploadResponse.url
+             
+            res.send({
+              status: true,
+              message: 'File is uploaded',
+              data
+          });
+            });
+ 
+          
         }
       } catch (err) {
         console.lofg("err", err);
