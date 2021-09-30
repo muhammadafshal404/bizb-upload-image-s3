@@ -7,6 +7,7 @@ import bodyParser from "body-parser";
 import morgan from "morgan";
 import _ from "lodash";
 import S3Upload from "./utils/s3Upload.js";
+
 const mySchema = importAsString("./schema.graphql");
 
 var _context = null;
@@ -15,6 +16,11 @@ const resolvers = {
   Product: {
     async media(parent, args, context, info) {
       return parent.media;
+    },
+  },
+  ProductVariant: {
+    async media(parent, args, context, info) {
+      return parent.media?parent.media:[];
     },
   },
 };
@@ -26,9 +32,7 @@ function myStartup1(context) {
   if (app.expressApp) {
     // enable files upload
     app.expressApp.use(
-      fileUpload({
-        createParentPath: true,
-      })
+      fileUpload()
     );
 
     //add other middleware
@@ -37,8 +41,8 @@ function myStartup1(context) {
     app.expressApp.use(bodyParser.urlencoded({ extended: true }));
     app.expressApp.use(morgan("dev"));
     app.expressApp.post("/upload", async (req, res) => {
-console.log(process.env);
 console.log("req.body",req.body)
+console.log("req.files",req.files)
       let isMulti=req.body.isMulti;
       let uploadPath=req.body.uploadPath;
 
