@@ -32,7 +32,7 @@ export default function S3Upload(fileContent, uploadName, key) {
     //   console.log("thumb generation complete");
 
     // });
-
+    
     // Setting up S3 upload parameters
     const params = {
       Bucket: BUCKET_NAME,
@@ -41,6 +41,11 @@ export default function S3Upload(fileContent, uploadName, key) {
     };
 
     try {
+      console.log({
+  accessKeyId:process.env.ID,
+  secretAccessKey:process.env.SECRET,
+  region:process.env.REGION,
+      bucketname:BUCKET_NAME})
       // Uploading files to the bucket
       s3.upload(params, function (err, data) {
         if (err) {
