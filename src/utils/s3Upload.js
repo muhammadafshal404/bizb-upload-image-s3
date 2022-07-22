@@ -8,7 +8,7 @@ import sharp from "sharp";
 // const REGION = "";
 
 // The name of the bucket that you have created
-const BUCKET_NAME = "landofsneakers2022";
+const BUCKET_NAME = process.env.BUCKET_NAME;
 const s3 = new AWS.S3({
   accessKeyId:process.env.ID,
   secretAccessKey:process.env.SECRET,
