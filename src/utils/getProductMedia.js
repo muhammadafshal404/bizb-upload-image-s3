@@ -10,18 +10,14 @@
  * @param {Boolean} args.shouldIncludeArchived - Include archived units in results
  * @returns {Promise<Object[]>} Array of Unit Variant objects.
  */
-export default async function getProductMedia(
-  context,
-  productId
- 
-) {
+export default async function getProductMedia(context, productId) {
   const { collections } = context;
   const { Products } = collections;
 
   const selector = {
-    "_id":productId
+    _id: productId,
   };
-console.log(selector)
+  console.log(selector);
 
   return Products.find(selector).toArray();
 }
