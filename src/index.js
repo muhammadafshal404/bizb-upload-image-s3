@@ -6,8 +6,8 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import morgan from "morgan";
 import _ from "lodash";
-import S3Upload from "./utils/s3Upload.js";
-
+import { S3UploadImage, S3UploadDocument } from "./utils/s3Upload.js";
+import sharp from "sharp";
 const mySchema = importAsString("./schema.graphql");
 
 var _context = null;
@@ -20,7 +20,7 @@ const resolvers = {
   },
   ProductVariant: {
     async media(parent, args, context, info) {
-      return parent.media?parent.media:[];
+      return parent.media ? parent.media : [];
     },
   },
 };
@@ -31,9 +31,7 @@ function myStartup1(context) {
 
   if (app.expressApp) {
     // enable files upload
-    app.expressApp.use(
-      fileUpload()
-    );
+    app.expressApp.use(fileUpload());
 
     //add other middleware
     app.expressApp.use(cors());
@@ -41,35 +39,45 @@ function myStartup1(context) {
     app.expressApp.use(bodyParser.urlencoded({ extended: true }));
     app.expressApp.use(morgan("dev"));
     app.expressApp.post("/upload", async (req, res) => {
-console.log("req.body",req.body)
-console.log("req.files",req.files)
-      let isMulti=req.body.isMulti;
-      let uploadPath=req.body.uploadPath;
-
+      console.log("req.body", req.body);
+      console.log("req.files", req.files);
+      let isMulti = req.body.isMulti;
+      let uploadPath = req.body.uploadPath;
+      console.log("upload path is ", uploadPath);
       let uploads = [];
+
+      sharp.cache(false);
       try {
         if (!req.files) {
           res.send({
             status: false,
             message: "No file uploaded",
           });
-        } else if(isMulti=='true') {
+        } else if (isMulti == "true") {
           let data = [];
 
           //loop all files
           _.forEach(_.keysIn(req.files.photos), (key) => {
             let photo = req.files.photos[key];
-            let promise = S3Upload(
+            console.log("multi photos are ", photo);
+
+            let getType = photo.mimetype.split("/");
+            console.log("get type is ", getType);
+            let fileType = getType[0];
+            console.log("file type is ", fileType);
+            let promise = S3UploadImage(
               req.files.photos[key].data,
-              "userProducts/" + req.files.photos[key].name,key
+              req.files.photos[key].name,
+              key,
+              fileType,
+              uploadPath
             ).then((uploadResponse) => {
-              console.log("upload resposne", uploadResponse);
-            if(uploadResponse["key"]){
-              data[uploadResponse["key"]].url=uploadResponse.url
-            }  
+              console.log("upload response", uploadResponse);
+              if (uploadResponse["key"]) {
+                data[uploadResponse["key"]].url = uploadResponse.url;
+              }
             });
             uploads.push(promise);
-            //push file details
             data.push({
               name: photo.name,
               mimetype: photo.mimetype,
@@ -90,34 +98,40 @@ console.log("req.files",req.files)
               res.send(err);
             });
           //return response
-        }else if(isMulti=='false'){
+        } else if (isMulti == "false") {
           let data = [];
 
-             //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
-             let photo = req.files.photos;
-             data.push({
-              name: photo.name,
-              mimetype: photo.mimetype,
-              size: photo.size,
-            });
-          S3Upload(
-              req.files.photos.data,
-              uploadPath + req.files.photos.name,0
-            ).then((uploadResponse) => {
-            
-              data[0].url=uploadResponse.url
-             
+          //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
+          let photo = req.files.photos;
+          let getType = photo.mimetype.split("/");
+          console.log("get type is ", getType);
+          let fileType = getType[0];
+          console.log("file type is ", fileType);
+          console.log("photo is ", photo);
+
+          data.push({
+            name: photo.name,
+            mimetype: photo.mimetype,
+            size: photo.size,
+          });
+          S3UploadImage(
+            req.files.photos.data,
+            req.files.photos.name,
+            0,
+            fileType,
+            uploadPath
+          ).then((uploadResponse) => {
+            data[0].url = uploadResponse.url;
+
             res.send({
               status: true,
-              message: 'File is uploaded',
-              data
-          });
+              message: "File is uploaded",
+              data,
             });
- 
-          
+          });
         }
       } catch (err) {
-        console.lofg("err", err);
+        console.log("err", err);
         res.status(500).send(err);
       }
     });

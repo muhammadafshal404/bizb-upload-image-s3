@@ -1,35 +1,27 @@
+import sharp from "sharp";
 
-// import sharp from "sharp";
 
-// const imgTransforms = [
-//     {
-//       name: "image",
-//       transform: { size: 1600, fit: "inside", format: "jpg", type: "image/jpeg" },
-//     },
-//     {
-//       name: "large",
-//       transform: { size: 1000, fit: "inside", format: "jpg", type: "image/jpeg" },
-//     },
-//     {
-//       name: "medium",
-//       transform: { size: 600, fit: "inside", format: "jpg", type: "image/jpeg" },
-//     },
-//     {
-//       name: "thumbnail",
-//       transform: { size: 235, fit: "inside", format: "png", type: "image/png" },
-//     },
-//   ];
-//   export default  function imageTransform(filename){
 
-//   sharp(filename)
-//   .resize({
-//     height: size,
-//     fit: sharp.fit[fit],
-//     withoutEnlargement: true,
-//   })
-//   .webp({ lossless: false, alphaQuality: 50, quality: 80 })
-//   .toFile("/thumb" + ".webp")
-//   .then(() => {
 
-//   });
-// }
+function imageTransformAndUpload(fileContent, thumbIndex, uploadName, key) {
+  const { size, fit, format, type } = imgTransforms[thumbIndex].transform;
+  return new Promise(async (resolve, reject) => {
+    sharp(fileContent)
+      .resize({
+        height: size,
+        fit: sharp.fit[fit],
+        withoutEnlargement: true,
+      })
+      .webp({ lossless: false, alphaQuality: 50, quality: 80 })
+      .toBuffer()
+      .then((result) => {
+        console.log("thumb generation complete");
+        console.log("result is ", result);
+      
+      })
+      .catch((err) => {
+        console.log("reaching catch ");
+        console.log("error is ", err);
+      });
+  });
+}
