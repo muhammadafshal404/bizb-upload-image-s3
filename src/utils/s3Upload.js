@@ -82,7 +82,7 @@ export async function S3UploadImage(fileContent, uploadName, key, fileType, uplo
           resolve({
             status: true,
             msg: `File uploaded successfully. ${data.Location}`,
-            key,
+            ...data,
             url: data.Location,
           });
         });
